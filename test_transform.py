@@ -1,5 +1,5 @@
 #!/bin/env python3
-# python 3.7+
+# python 3.5+
 # SPDX-License-Identifier: MIT
 
 import transform
@@ -23,11 +23,11 @@ def test_dataset_transform_stated_unavailable():
         # Nonemployer Data Prior to 2012
         transform.dataset_transform("NES", "2011", "")
     # with pytest.raises(KeyError):
-        # # County Business Patterns Prior to 2012
-        # transform.dataset_transform("BP", "2011", "CBP")
+    # # County Business Patterns Prior to 2012
+    # transform.dataset_transform("BP", "2011", "CBP")
     # with pytest.raises(KeyError):
-        # # Economic Census and Economic Census Island Area Prior to 2012
-        # transform.dataset_transform("ECN", "2011", "IA")
+    # # Economic Census and Economic Census Island Area Prior to 2012
+    # transform.dataset_transform("ECN", "2011", "IA")
     with pytest.raises(KeyError):
         # 2010 EEO
         transform.dataset_transform("EEO", "2010", "")
@@ -91,8 +91,8 @@ def test_main():
         ),
         (
             "https://factfinder.census.gov/bkmk/table/1.0/en/SBO/2012/00CSA01",
-            "https://data.census.gov/cedsci/table?y=2012&tid=SBOCS2012.SB1200CSA01"
-        )
+            "https://data.census.gov/cedsci/table?y=2012&tid=SBOCS2012.SB1200CSA01",
+        ),
     ]
     for old, new in urls:
         assert transform.main(old) == new
@@ -109,7 +109,10 @@ def test_integration_valid():
     )
 
     r = subprocess.run(
-        ["python3", "transform.py", old], capture_output=True, text=True,
+        ["python3", "transform.py", old],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
     )
     assert r.stdout == new
     assert not r.stderr
@@ -118,7 +121,10 @@ def test_integration_valid():
 
 def test_integration_invalid():
     r = subprocess.run(
-        ["python3", "transform.py", "NotARealURL"], capture_output=True, text=True
+        ["python3", "transform.py", "NotARealURL"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
     )
     assert not r.stdout
     assert "ValueError" in r.stderr

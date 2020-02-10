@@ -1,5 +1,5 @@
 #!/bin/env python3
-# python 3.7+
+# python 3.5+
 # SPDX-License-Identifier: MIT
 
 import fileinput
@@ -121,9 +121,9 @@ def dataset_transform(program, dataset, ds_table):
     survey, year = "", ""
     # Programs not available at all
     if program in {"ASM", "COG", "CFS", "PEP"}:
-        raise KeyError(f"{program} not yet available in CEDSCI")
+        raise KeyError(program + " not yet available in CEDSCI")
     elif program in {"AHS", "PP", "GEP", "SSF", "SGF", "STC", "BES", "SLF"}:
-        raise KeyError(f"{program} uses a different data access system")
+        raise KeyError(program + " uses a different data access system")
     elif program == "EEO":
         raise KeyError("2010 EEO data not available on CEDSCI")
     elif program == "ECN":
@@ -161,7 +161,7 @@ def dataset_transform(program, dataset, ds_table):
     elif program == "NES":
         year = dataset
         survey = "NONEMP"
-        new_table = f"NS{year[2:4]}00NONEMP"
+        new_table = "NS{0}00NONEMP".format(year[2:4])
         if int(year) < 2012:
             raise KeyError("Pre-2012 Nonemployer data not available on CEDSCI")
     elif program == "SBO":
@@ -177,7 +177,9 @@ def dataset_transform(program, dataset, ds_table):
 
     if not (survey and year and new_table):
         raise KeyError(
-            f"{program}/{dataset} could not be transformed to a CEDSCI survey"
+            "{0}/{1} could not be transformed to a CEDSCI survey".format(
+                program, dataset
+            )
         )
     else:
         return survey, year, new_table
@@ -191,7 +193,7 @@ def pipe_to_underscore(pipelist):
 def build_url(data):
     """Builds a CEDSCI url from a Cedsci named tuple"""
     assert set(data.keys()) <= cedsci
-    base = f"https://data.census.gov/cedsci/{data.pop('target')}?"
+    base = "https://data.census.gov/cedsci/{0}?".format(data.pop('target'))
     query = urlencode({k: v for k, v in data.items() if v})
     return base + query
 
