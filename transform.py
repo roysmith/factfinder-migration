@@ -2,6 +2,7 @@
 # python 3.7+
 # SPDX-License-Identifier: MIT
 
+import fileinput
 import sys
 from urllib.parse import urlencode
 
@@ -197,8 +198,11 @@ def build_url(data):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        result = main(sys.argv[1])
-        print(result)
+    if len(sys.argv) == 2 and sys.argv[1] != "-":
+        res = main(sys.argv[1].strip())
+        print(res)
     else:
-        raise ValueError("One American FactFinder URL is required")
+        for line in fileinput.input():
+            if line:
+                res = main(line.strip())
+                print(res)
