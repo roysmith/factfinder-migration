@@ -136,7 +136,7 @@ def dataset_transform(program, dataset, ds_table):
         )
         year = dataset
         if int(year) < 2012 and survey == "CBP":
-            pass
+            raise KeyError("Pre-2012 County Business Patterns not available in CEDSCI")
     # Available or partially-available programs
     elif program == "ACS":
         new_table = ds_table
@@ -147,7 +147,6 @@ def dataset_transform(program, dataset, ds_table):
             raise KeyError("Dataset does not exist on CEDSCI")
         if int(year) < 2010:
             raise KeyError("Pre-2010 ACS data not available on CEDSCI")
-            raise KeyError("Pre-2012 County Business Patterns not available in CEDSCI")
     elif program == "DEC":
         decennial = {
             "113": "DECENNIALCD113",
