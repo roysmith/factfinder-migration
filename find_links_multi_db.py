@@ -33,9 +33,8 @@ def main():
                 GROUP BY el_to
                 ORDER BY pages DESC
                 """)
-            for row in cur.fetchall():
-                print(db_name, row)
-
+            for el_to, count in cur.fetchall():
+                print(db_name, el_to.decode('utf-8'), count)
     
 
 if __name__ == '__main__':
