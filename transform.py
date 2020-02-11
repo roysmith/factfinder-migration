@@ -5,35 +5,35 @@
 import fileinput
 import sys
 from urllib.parse import urlencode
+from collections import OrderedDict
 
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
+aff_cf = ("version", "lang", "geo_type", "geo_name", "topic", "object")
 
-cedsci = frozenset(
-    {
-        "target",
-        "q",  # query
-        "t",  # topics
-        "g",  # geoids, underscore list
-        "y",  # year
-        "d",  # dataset
-        "n",  # NAICS code
-        "p",  # product/service code(s)
-        "table",  # table id
-        "tid",  # {dataset}{year}.{table id}
-        "comm",  # commodity code
-        # table-specific parameters
-        "hidePreview",
-        "moe",
-        "tp",
-        # map-specific parameters
-        "layer",
-        "cid",
-        "palette",
-        "break",
-        "classification",
-        "mode",
-        "vintage",
-    }
+cedsci = (
+    "target",
+    "q",  # query
+    "t",  # topics
+    "g",  # geoids, underscore list
+    "y",  # year
+    "d",  # dataset
+    "n",  # NAICS code
+    "p",  # product/service code(s)
+    "table",  # table id
+    "tid",  # {dataset}{year}.{table id}
+    "comm",  # commodity code
+    # table-specific parameters
+    "hidePreview",
+    "moe",
+    "tp",
+    # map-specific parameters
+    "layer",
+    "cid",
+    "palette",
+    "break",
+    "classification",
+    "mode",
+    "vintage",
 )
 
 
@@ -77,7 +77,7 @@ def table(raw_data):
     survey, year, table_id = dataset_transform(
         raw_data["program"], raw_data["dataset"], raw_data["product"]
     )
-    new_data = dict(
+    new_data = OrderedDict(
         target="table",
         g=pipe_to_underscore(raw_data.get("geoids", "")),
         y=year,
@@ -192,9 +192,9 @@ def pipe_to_underscore(pipelist):
 
 def build_url(data):
     """Builds a CEDSCI url from a Cedsci named tuple"""
-    assert set(data.keys()) <= cedsci
-    base = "https://data.census.gov/cedsci/{0}?".format(data.pop('target'))
-    query = urlencode({k: v for k, v in data.items() if v})
+    assert set(data.keys()) <= set(cedsci)
+    base = "https://data.census.gov/cedsci/{0}?".format(data.pop("target"))
+    query = urlencode(OrderedDict((k, v) for k, v in sorted(data.items()) if v))
     return base + query
 
 

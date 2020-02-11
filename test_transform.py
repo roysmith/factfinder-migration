@@ -75,23 +75,23 @@ def test_main():
             "https://factfinder.census.gov/bkmk/table/1.0/en/"
             "ACS/13_5YR/B07010/0100000US|0400000US01|0500000US01001",
             "https://data.census.gov/cedsci/table?g="
-            "0100000US_0400000US01_0500000US01001&y=2013&tid=ACSDT5Y2013.B07010",
+            "0100000US_0400000US01_0500000US01001&tid=ACSDT5Y2013.B07010&y=2013",
         ),
         (
             "https://factfinder.census.gov/bkmk/table/1.0/en/DEC/10_113/H1",
-            "https://data.census.gov/cedsci/table?y=2010&tid=DECENNIALCD1132010.H1",
+            "https://data.census.gov/cedsci/table?tid=DECENNIALCD1132010.H1&y=2010",
         ),
         (
             "http://factfinder.census.gov/bkmk/table/1.0/en/DEC/10_SF1/H10",
-            "https://data.census.gov/cedsci/table?y=2010&tid=DECENNIALSF12010.H10",
+            "https://data.census.gov/cedsci/table?tid=DECENNIALSF12010.H10&y=2010",
         ),
         (
             "https://factfinder.census.gov/bkmk/table/1.0/en/NES/2016/00A1",
-            "https://data.census.gov/cedsci/table?y=2016&tid=NONEMP2016.NS1600NONEMP",
+            "https://data.census.gov/cedsci/table?tid=NONEMP2016.NS1600NONEMP&y=2016",
         ),
         (
             "https://factfinder.census.gov/bkmk/table/1.0/en/SBO/2012/00CSA01",
-            "https://data.census.gov/cedsci/table?y=2012&tid=SBOCS2012.SB1200CSA01",
+            "https://data.census.gov/cedsci/table?tid=SBOCS2012.SB1200CSA01&y=2012",
         ),
     ]
     for old, new in urls:
@@ -104,8 +104,8 @@ def test_integration_valid():
         "ACS/13_5YR/B07010/0100000US|0400000US01|0500000US01001"
     )
     new = (
-        "https://data.census.gov/cedsci/table?"
-        "g=0100000US_0400000US01_0500000US01001&y=2013&tid=ACSDT5Y2013.B07010\n"
+        "https://data.census.gov/cedsci/table"
+        "?g=0100000US_0400000US01_0500000US01001&tid=ACSDT5Y2013.B07010&y=2013\n"
     )
 
     r = subprocess.run(
