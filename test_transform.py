@@ -93,6 +93,11 @@ def test_main():
             "https://factfinder.census.gov/bkmk/table/1.0/en/SBO/2012/00CSA01",
             "https://data.census.gov/cedsci/table?tid=SBOCS2012.SB1200CSA01&y=2012",
         ),
+        (
+            "http://factfinder.census.gov/bkmk/cf/1.0/en/place/Chicago city, Illinois"
+            "/POPULATION/DECENNIAL_CNT",
+            "https://data.census.gov/cedsci/profile?q=Chicago+city%2C+Illinois",
+        ),
     ]
     for old, new in urls:
         assert transform.main(old) == new

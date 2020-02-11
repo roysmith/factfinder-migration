@@ -44,14 +44,12 @@ def main(raw_url):
         raise ValueError("Malformed URL")
 
     # split into data fields
-    domain, tool, target, *raw_data = old_url.split("/")
+    domain, tool, target, *data = old_url.split("/")
     if tool not in {"bkmk"}:
         # bkmk links have well-defined information
         # faces links have little to no information
         # servlet links may have useful information, but are not well-defined
         raise ValueError("Not a stable deep link")
-
-    data = dict(zip(aff_table, raw_data))
 
     # handle different endpoints differently
     if target == "table":
@@ -60,8 +58,8 @@ def main(raw_url):
     #     new_url = navigation(data)
     # elif target == "qs":
     #     new_url = qs(data)
-    # elif target == "cf":
-    #     new_url = cf(data)
+    elif target == "cf":
+        new_url = cf(data)
     # elif target == "sm":
     #     new_url = sm(data)
     # elif target == "select":
@@ -72,8 +70,9 @@ def main(raw_url):
     return build_url(new_url)
 
 
-def table(raw_data):
+def table(data):
     """Transforms AFF table URL data to CEDSCI table URL data"""
+    raw_data = OrderedDict(zip(aff_table, data))
     survey, year, table_id = dataset_transform(
         raw_data["program"], raw_data["dataset"], raw_data["product"]
     )
@@ -96,9 +95,16 @@ def qs(raw_data):
     raise NotImplementedError
 
 
-def cf(raw_data):
+def cf(data):
     """AFF Community Facts"""
-    raise NotImplementedError
+    # AFF linked to Community Facts by place name
+    # CEDSCI links to Community Profiles by GEOID, but we can get around
+    # that by using search instead
+    raw_data = OrderedDict(zip(aff_cf, data))
+    if raw_data["geo_type"] == "zip":
+        raise KeyError("CEDSCI does not support profiles for zipcodes")
+    new_data = OrderedDict(target="profile", q=raw_data["geo_name"])
+    return new_data
 
 
 def sm(raw_data):
