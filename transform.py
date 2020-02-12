@@ -2,7 +2,6 @@
 # python 3.5+
 # SPDX-License-Identifier: MIT
 
-import fileinput
 import sys
 from urllib.parse import urlencode
 from collections import OrderedDict
@@ -205,11 +204,12 @@ def build_url(data):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2 and sys.argv[1] != "-":
-        res = main(sys.argv[1].strip())
-        print(res)
+    if len(sys.argv) == 1 or sys.argv[1] == "-":
+        input_src = sys.stdin
     else:
-        for line in fileinput.input():
-            if line:
-                res = main(line.strip())
-                print(res)
+        input_src = sys.argv[1:]
+
+    for line in input_src:
+        if line:
+            res = main(line.strip())
+            print(res)
