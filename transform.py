@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import sys
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from collections import OrderedDict
 
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
@@ -36,39 +36,71 @@ cedsci = (
 )
 
 
+class Error(Exception):
+    pass
+
+
+class InputError(Error, ValueError):
+    """Exception raised for errors from input, like an invalid URL"""
+
+    def __init__(self, message):
+        self.message = message
+
+
+class UnsupportedCensusData(Error):
+    """Exception raised for URLs where the data is unavailable on CEDSCI"""
+
+    def __init__(self, message):
+        self.message = message
+
+
 def main(raw_url):
     # remove protocol scheme
     scheme, sep, old_url = raw_url.partition("//")
     if not sep:
-        raise ValueError("Malformed URL")
+        raise InputError("Input is not a valid URL")
 
     # split into data fields
     domain, tool, target, *data = old_url.split("/")
-    if tool not in {"bkmk"}:
-        # bkmk links have well-defined information
-        # faces links have little to no information
-        # servlet links may have useful information, but are not well-defined
-        raise ValueError("Not a stable deep link")
 
     # handle different endpoints differently
-    if target == "table":
-        new_url = table(data)
-    # elif target == "navigation":
-    #     new_url = navigation(data)
-    # elif target == "qs":
-    #     new_url = qs(data)
-    elif target == "cf":
-        new_url = cf(data)
-    # elif target == "sm":
-    #     new_url = sm(data)
-    # elif target == "select":
-    #     new_url = select(data)
+    if tool == "bkmk":
+        if target == "table":
+            new_url = table(data)
+        elif target == "cf":
+            new_url = cf(data)
+        elif target == "sm":
+            new_url = sm(data)
+        else:
+            raise NotImplementedError("No transformation rule for that data type")
+    elif tool == "servlet":
+        parsed = urlparse(old_url)
+        tool, target = parsed.path.split("/")
+        if target == "QTTable":
+            new_url = qttable(parsed)
+        elif target == "GCTTable":
+            pass
+        elif target == "DTTable":
+            pass
+        elif target == "IPTable":
+            pass
+        elif target == "ADPTable":
+            pass
+        elif target == "SAFFFacts":
+            pass
+        elif target == "SAFFPopulation":
+            pass
+        elif target == "ACCSAFFFacts":
+            pass
+        else:
+            raise NotImplementedError("No transformation rule for that data type")
     else:
-        raise NotImplementedError("No transformation rule for that data type")
+        raise InputError("Not a stable deep link")
 
     return build_url(new_url)
 
 
+# /bkmk/
 def table(data):
     """Transforms AFF table URL data to CEDSCI table URL data"""
     raw_data = OrderedDict(zip(aff_table, data))
@@ -84,16 +116,6 @@ def table(data):
     return new_data
 
 
-def navigation(raw_data):
-    """AFF search results to CEDSCI search results"""
-    raise NotImplementedError
-
-
-def qs(raw_data):
-    """AFF advanced search results to CEDSCI search results"""
-    raise NotImplementedError
-
-
 def cf(data):
     """AFF Community Facts"""
     # AFF linked to Community Facts by place name
@@ -101,18 +123,17 @@ def cf(data):
     # that by using search instead
     raw_data = OrderedDict(zip(aff_cf, data))
     if raw_data["geo_type"] == "zip":
-        raise KeyError("CEDSCI does not support profiles for zipcodes")
+        raise UnsupportedCensusData("CEDSCI does not support profiles for zipcodes")
     new_data = OrderedDict(target="profile", q=raw_data["geo_name"])
     return new_data
 
 
-def sm(raw_data):
+def sm(data):
     """Transforms AFF reference map to CEDSCI map"""
     raise NotImplementedError
 
 
-def select(raw_data):
-    """AFF overlay tabs"""
+def qttable(data):
     raise NotImplementedError
 
 
@@ -126,11 +147,11 @@ def dataset_transform(program, dataset, ds_table):
     survey, year = "", ""
     # Programs not available at all
     if program in {"ASM", "COG", "CFS", "PEP"}:
-        raise KeyError(program + " not yet available in CEDSCI")
+        raise UnsupportedCensusData(program + " not yet available in CEDSCI")
     elif program in {"AHS", "PP", "GEP", "SSF", "SGF", "STC", "BES", "SLF"}:
-        raise KeyError(program + " uses a different data access system")
+        raise UnsupportedCensusData(program + " uses a different data access system")
     elif program == "EEO":
-        raise KeyError("2010 EEO data not available on CEDSCI")
+        raise UnsupportedCensusData("2010 EEO data not available on CEDSCI")
     elif program == "ECN":
         # TODO: Data likely exists, but tables don't line up
         raise NotImplementedError("ECN tables don't line up between AFF and CEDSCI")
@@ -141,7 +162,9 @@ def dataset_transform(program, dataset, ds_table):
         )
         year = dataset
         if int(year) < 2012 and survey == "CBP":
-            raise KeyError("Pre-2012 County Business Patterns not available in CEDSCI")
+            raise UnsupportedCensusData(
+                "Pre-2012 County Business Patterns not available in CEDSCI"
+            )
     # Available or partially-available programs
     elif program == "ACS":
         new_table = ds_table
@@ -149,9 +172,9 @@ def dataset_transform(program, dataset, ds_table):
         if dataset.endswith("YR"):
             survey = "ACSDT" + dataset[3:5]
         else:
-            raise KeyError("Dataset does not exist on CEDSCI")
+            raise UnsupportedCensusData("Dataset does not exist on CEDSCI")
         if int(year) < 2010:
-            raise KeyError("Pre-2010 ACS data not available on CEDSCI")
+            raise UnsupportedCensusData("Pre-2010 ACS data not available on CEDSCI")
     elif program == "DEC":
         decennial = {
             "113": "DECENNIALCD113",
@@ -162,26 +185,30 @@ def dataset_transform(program, dataset, ds_table):
         survey = decennial.get(dataset[-3:])
         new_table = ds_table
         if not survey:
-            raise KeyError("Decennial censusus data is not all available on CEDSCI")
+            raise UnsupportedCensusData(
+                "Decennial censusus data is not all available on CEDSCI"
+            )
     elif program == "NES":
         year = dataset
         survey = "NONEMP"
         new_table = "NS{0}00NONEMP".format(year[2:4])
         if int(year) < 2012:
-            raise KeyError("Pre-2012 Nonemployer data not available on CEDSCI")
+            raise UnsupportedCensusData(
+                "Pre-2012 Nonemployer data not available on CEDSCI"
+            )
     elif program == "SBO":
         year = dataset
         new_table = "SB" + year[-2:] + ds_table
         if ds_table[-3] == "A":
             survey = "SBOCS"
         else:
-            raise KeyError(
+            raise UnsupportedCensusData(
                 "Survey of Business Owners tables other than "
                 "the company summary are not available on CEDSCI"
             )
 
     if not (survey and year and new_table):
-        raise KeyError(
+        raise InputError(
             "{0}/{1} could not be transformed to a CEDSCI survey".format(
                 program, dataset
             )

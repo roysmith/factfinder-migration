@@ -16,10 +16,10 @@ def test_pipe_to_underscore():
 
 
 def test_dataset_transform_stated_unavailable():
-    with pytest.raises(KeyError):
+    with pytest.raises(transform.UnsupportedCensusData):
         # American Community Survey Data Prior to 2010
         transform.dataset_transform("ACS", "09_1YR", "")
-    with pytest.raises(KeyError):
+    with pytest.raises(transform.UnsupportedCensusData):
         # Nonemployer Data Prior to 2012
         transform.dataset_transform("NES", "2011", "")
     # with pytest.raises(KeyError):
@@ -28,7 +28,7 @@ def test_dataset_transform_stated_unavailable():
     # with pytest.raises(KeyError):
     # # Economic Census and Economic Census Island Area Prior to 2012
     # transform.dataset_transform("ECN", "2011", "IA")
-    with pytest.raises(KeyError):
+    with pytest.raises(transform.UnsupportedCensusData):
         # 2010 EEO
         transform.dataset_transform("EEO", "2010", "")
 
@@ -48,7 +48,7 @@ def test_dataset_transform_bp():
 
 
 def test_dataset_transform_decennial_sf2():
-    with pytest.raises(KeyError):
+    with pytest.raises(transform.UnsupportedCensusData):
         transform.dataset_transform("DEC", "10_SF2", "")
 
 
@@ -65,7 +65,7 @@ def test_dataset_tranform_supported():
 
 
 def test_dataset_transform_malformed():
-    with pytest.raises(KeyError):
+    with pytest.raises(transform.InputError):
         transform.dataset_transform("foo", "bar", "baz")
 
 
@@ -132,5 +132,5 @@ def test_integration_invalid():
         universal_newlines=True,
     )
     assert not r.stdout
-    assert "ValueError" in r.stderr
+    assert "InputError" in r.stderr
     assert r.returncode > 0
