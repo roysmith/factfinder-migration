@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import sys
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode, urlparse, parse_qsl
 from collections import OrderedDict
 
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
@@ -76,8 +76,9 @@ def main(raw_url):
     elif tool == "servlet":
         parsed = urlparse(old_url)
         tool, target = parsed.path.split("/")
+        data = OrderedDict(parse_qsl(parsed.query))
         if target == "QTTable":
-            new_url = qttable(parsed)
+            new_url = qttable(data)
         elif target == "GCTTable":
             pass
         elif target == "DTTable":
@@ -134,7 +135,10 @@ def sm(data):
 
 
 def qttable(data):
-    raise NotImplementedError
+    if data.get("-qr_name", "").startswith("DEC_2000"):
+        raise UnsupportedCensusData("CEDSCI does not yet have 2000 Census data")
+    else:
+        raise NotImplementedError("Could not find any 2010 links to test with")
 
 
 def dataset_transform(program, dataset, ds_table):
