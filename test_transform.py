@@ -88,6 +88,27 @@ def test_main():
             "/POPULATION/DECENNIAL_CNT",
             "https://data.census.gov/cedsci/profile?q=Chicago+city%2C+Illinois",
         ),
+        (
+            "http://factfinder.census.gov/servlet/SAFFPopulation?_event=Search"
+            "&geo_id=04000US06",
+            "https://data.census.gov/cedsci/profile?g=0400000US06",
+        ),
+        (
+            "http://factfinder.census.gov/servlet/SAFFFacts?_event=Search"
+            "&geo_id=16000US3546310&_geoContext=01000US%7C04000US35%7C16000US3546310"
+            "&_street=&_county=Magdalena&_cityTown=Magdalena&_state=04000US35&_zip="
+            "&_lang=en&_sse=on&ActiveGeoDiv=geoSelect&_useEV=&pctxt=fph&pgsl=160"
+            "&_submenuId=factsheet_1&ds_name=DEC_2000_SAFF&_ci_nbr=null&qr_name=null"
+            "&reg=null:null&_keyword=&_industry=",
+            "https://data.census.gov/cedsci/profile?g=1600000US3546310",
+        ),
+        (
+            "http://factfinder.census.gov/servlet/ACSSAFFFacts?_event="
+            "&geo_id=16000US3137000&_geoContext=01000US%7C04000US31%7C16000US3137000"
+            "&_street=&_county=omaha&_cityTown=omaha&_state=04000US31&_zip=&_lang=en"
+            "&_sse=on&ActiveGeoDiv=&_useEV=&pctxt=fph&pgsl=160",
+            "https://data.census.gov/cedsci/profile?g=1600000US3137000",
+        ),
     ]
     for old, new in urls:
         assert transform.main(old) == new
@@ -104,10 +125,31 @@ def test_main_fail():
             "http://factfinder.census.gov/bkmk/cf/1.0/en/zip/17215/ALL",
             transform.UnsupportedCensusData,
         ),
+        (
+            "http://factfinder.census.gov/servlet/ACSSAFFFacts?_event=ChangeGeoContext"
+            "&geo_id=160000US0644000",
+            transform.InputError,
+        ),
+        (
+            "http://factfinder.census.gov/servlet/SAFFFacts?_event=Search"
+            "&geo_id=86000US78516",
+            transform.UnsupportedCensusData,
+        ),
     ]
     for url, err in tests:
         with pytest.raises(err):
             transform.main(url)
+
+
+@pytest.mark.xfail
+def test_main_ni():
+    urls = [
+        "http://factfinder.census.gov/servlet/ACSSAFFFacts?_event=Search&geo_id="
+        "&_geoContext=&_street=&_county=Brevard+county&_cityTown=Brevard+county"
+        "&_state=04000US12&_zip=&_lang=en&_sse=on&pctxt=fph&pgsl=010",
+    ]
+    for url in urls:
+        assert transform.main(url)
 
 
 def test_integration_valid():

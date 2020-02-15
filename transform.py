@@ -80,10 +80,10 @@ def main(raw_url):
         parsed = urlparse(raw_url)
         tool, target = parsed.path.split("/")[1:]
         data = OrderedDict(parse_qs(parsed.query))
-        if target in {"QTTable", "GCTTable", "DTTable"}:
-            new_url = servlet_table(target, data)
+        if target in {"SAFFFacts", "ACSSAFFFacts", "SAFFPopulation"}:
+            new_url = servlet_facts(data)
         else:
-            raise NotImplementedError("No transformation rule for that data type")
+            new_url = servlet_table(target, data)
     else:
         raise InputError("Not a stable deep link")
 
@@ -155,6 +155,29 @@ def servlet_table(servlet, data):
     return new_data
 
 
+def servlet_facts(data):
+    """Convert servlet Community Facts links to CEDSCI profile"""
+    raw_geo_id = data.get("geo_id", [""])[0]
+    geo_lvc = raw_geo_id.partition("US")[0]
+    # Some geographic identifiers seem to be missing geo component or variant
+    if len(geo_lvc) == 5:
+        # Use default value of 00 for missing component/varient
+        geo_id = raw_geo_id[0:2] + "00" + raw_geo_id[2:]
+    elif len(geo_lvc) == 7:
+        # Prefix is correct length already, do nothing
+        geo_id = raw_geo_id
+    elif not raw_geo_id:
+        # Might be able to construct a search query from URL data
+        raise NotImplementedError("URL does not contain a geographic identifier")
+    else:
+        raise InputError("Geographic Idnetifier is malformed")
+
+    # Check if geo id indicates a zip code
+    if geo_id[0:3] in {"850", "851", "860", "871"}:
+        raise UnsupportedCensusData("CEDSCI does not support profiles for zipcodes")
+
+    new_data = OrderedDict(target="profile", g=geo_id)
+    return new_data
 
 
 def dataset_transform(program, dataset, ds_table, year=""):
