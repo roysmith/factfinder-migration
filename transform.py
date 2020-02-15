@@ -5,6 +5,7 @@
 import sys
 from urllib.parse import urlencode, urlparse, parse_qs
 from collections import OrderedDict
+import warnings
 
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
 aff_cf = ("version", "lang", "geo_type", "geo_name", "topic", "object")
@@ -52,6 +53,10 @@ class UnsupportedCensusData(Error):
 
     def __init__(self, message):
         self.message = message
+
+
+class LowConfidenceTransformation(Warning, Error):
+    pass
 
 
 def main(raw_url):
@@ -142,6 +147,10 @@ def servlet_table(servlet, data):
     survey, year, new_table = dataset_transform(program, dataset, ds_table, year)
     new_data = OrderedDict(
         target="table", g=geoid, y=year, tid=survey + year + "." + new_table
+    )
+    warnings.warn(
+        "Servlet transformations are untesed, this link may not work.",
+        LowConfidenceTransformation,
     )
     return new_data
 
