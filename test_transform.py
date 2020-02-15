@@ -93,6 +93,23 @@ def test_main():
         assert transform.main(old) == new
 
 
+def test_main_fail():
+    tests = [
+        ("NotARealURL", transform.InputError),
+        (
+            "https://factfinder.census.gov/faces/nav/jsf/pages/index.xhtml",
+            transform.InputError,
+        ),
+        (
+            "http://factfinder.census.gov/bkmk/cf/1.0/en/zip/17215/ALL",
+            transform.UnsupportedCensusData,
+        ),
+    ]
+    for url, err in tests:
+        with pytest.raises(err):
+            transform.main(url)
+
+
 def test_integration_valid():
     old = (
         "https://factfinder.census.gov/bkmk/table/1.0/en/"
