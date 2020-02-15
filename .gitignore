@@ -3,3 +3,6 @@ __pycache__/
 *.sqlite3
 *~
 /env/
+.coverage
+/htmlcov/
+Pipfile*

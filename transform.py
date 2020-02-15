@@ -141,14 +141,14 @@ def qttable(data):
         raise NotImplementedError("Could not find any 2010 links to test with")
 
 
-def dataset_transform(program, dataset, ds_table):
+def dataset_transform(program, dataset, ds_table, year=""):
     """Transforms an AFF dataset identifier into the corresponding CEDSCI tid
 
-    Not all American FactFinder data has been moved to CEDSI.
+    Not all American FactFinder data has been moved to CEDSCI.
     Some is avaliable in other systems or the census website, while
     other datasets will just plain become unavailable.
     """
-    survey, year = "", ""
+    survey = ""
     # Programs not available at all
     if program in {"ASM", "COG", "CFS", "PEP"}:
         raise UnsupportedCensusData(program + " not yet available in CEDSCI")
@@ -172,11 +172,14 @@ def dataset_transform(program, dataset, ds_table):
     # Available or partially-available programs
     elif program == "ACS":
         new_table = ds_table
-        year = "20" + dataset[0:2]
+        if not year:
+            year = "20" + dataset[0:2]
+
         if dataset.endswith("YR"):
             survey = "ACSDT" + dataset[3:5]
         else:
             raise UnsupportedCensusData("Dataset does not exist on CEDSCI")
+
         if int(year) < 2010:
             raise UnsupportedCensusData("Pre-2010 ACS data not available on CEDSCI")
     elif program == "DEC":
@@ -185,10 +188,15 @@ def dataset_transform(program, dataset, ds_table):
             "115": "DECENNIALCD115",
             "SF1": "DECENNIALSF1",
         }
-        year = "20" + dataset[0:2]
+        if not year:
+            year = "20" + dataset[0:2]
         survey = decennial.get(dataset[-3:])
+        if ds_table == "GCT":
+            raise UnsupportedCensusData(
+                "Geographic Comparison Tables are no longer available"
+            )
         new_table = ds_table
-        if not survey:
+        if not survey or int(year) < 2010:
             raise UnsupportedCensusData(
                 "Decennial censusus data is not all available on CEDSCI"
             )
@@ -227,7 +235,7 @@ def pipe_to_underscore(pipelist):
 
 
 def build_url(data):
-    """Builds a CEDSCI url from a Cedsci named tuple"""
+    """Builds a CEDSCI url from a dict of query params"""
     assert set(data.keys()) <= set(cedsci)
     base = "https://data.census.gov/cedsci/{0}?".format(data.pop("target"))
     query = urlencode(OrderedDict((k, v) for k, v in sorted(data.items()) if v))
