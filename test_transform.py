@@ -16,21 +16,16 @@ def test_pipe_to_underscore():
 
 
 def test_dataset_transform_stated_unavailable():
-    with pytest.raises(transform.UnsupportedCensusData):
-        # American Community Survey Data Prior to 2010
-        transform.dataset_transform("ACS", "09_1YR", "")
-    with pytest.raises(transform.UnsupportedCensusData):
-        # Nonemployer Data Prior to 2012
-        transform.dataset_transform("NES", "2011", "")
-    # with pytest.raises(KeyError):
-    # # County Business Patterns Prior to 2012
-    # transform.dataset_transform("BP", "2011", "CBP")
-    # with pytest.raises(KeyError):
-    # # Economic Census and Economic Census Island Area Prior to 2012
-    # transform.dataset_transform("ECN", "2011", "IA")
-    with pytest.raises(transform.UnsupportedCensusData):
-        # 2010 EEO
-        transform.dataset_transform("EEO", "2010", "")
+    tests = [
+        ("ACS", "09_1YR", ""),
+        ("NES", "2011", ""),
+        ("EEO", "2010", ""),
+        ("DEC", "10_SF2", ""),
+        ("DEC", "10_SF1", "GCT"),
+    ]
+    for test in tests:
+        with pytest.raises(transform.UnsupportedCensusData):
+            transform.dataset_transform(*test)
 
 
 @pytest.mark.xfail
@@ -45,11 +40,6 @@ def test_dataset_transform_bp():
         "2016",
         "00CZ2",
     )
-
-
-def test_dataset_transform_decennial_sf2():
-    with pytest.raises(transform.UnsupportedCensusData):
-        transform.dataset_transform("DEC", "10_SF2", "")
 
 
 def test_dataset_tranform_supported():
