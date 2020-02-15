@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import sys
-from urllib.parse import urlencode, urlparse, parse_qsl
+from urllib.parse import urlencode, urlparse, parse_qs
 from collections import OrderedDict
 
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
@@ -69,30 +69,14 @@ def main(raw_url):
             new_url = table(data)
         elif target == "cf":
             new_url = cf(data)
-        elif target == "sm":
-            new_url = sm(data)
         else:
             raise NotImplementedError("No transformation rule for that data type")
     elif tool == "servlet":
-        parsed = urlparse(old_url)
-        tool, target = parsed.path.split("/")
-        data = OrderedDict(parse_qsl(parsed.query))
-        if target == "QTTable":
-            new_url = qttable(data)
-        elif target == "GCTTable":
-            pass
-        elif target == "DTTable":
-            pass
-        elif target == "IPTable":
-            pass
-        elif target == "ADPTable":
-            pass
-        elif target == "SAFFFacts":
-            pass
-        elif target == "SAFFPopulation":
-            pass
-        elif target == "ACCSAFFFacts":
-            pass
+        parsed = urlparse(raw_url)
+        tool, target = parsed.path.split("/")[1:]
+        data = OrderedDict(parse_qs(parsed.query))
+        if target in {"QTTable", "GCTTable", "DTTable"}:
+            new_url = servlet_table(target, data)
         else:
             raise NotImplementedError("No transformation rule for that data type")
     else:
@@ -129,16 +113,39 @@ def cf(data):
     return new_data
 
 
-def sm(data):
-    """Transforms AFF reference map to CEDSCI map"""
-    raise NotImplementedError
+def servlet_table(servlet, data):
+    """Transforms AFF /servlet/ links to CEDSCI table links"""
+    keys = {"GCTTable": "-mt_name", "QTTable": "-qr_name", "DTTable": "-mt_name"}
+    table_name = data.get(keys.get(servlet, ""), [""])[0]
+    if not table_name:
+        try:
+            table_name = "_".join(
+                (
+                    data["-ds_name"][0],
+                    data["-_box_head_nbr"][0],
+                    data.get("-format", [""])[0].replace("-", ""),
+                )
+            )
+        except KeyError:
+            raise NotImplementedError(
+                "No transformation rule for that servlet or insufficient data"
+            )
+
+    table_data = table_name.split("_")
+    program, year, dataset = table_data[0:3]
+    geoid = "_".join(data.get("-geo_id", data.get("geo_id", [""])))
+
+    ds_table = table_data[4]
+    if ds_table == "U":
+        ds_table = table_data[5]
+
+    survey, year, new_table = dataset_transform(program, dataset, ds_table, year)
+    new_data = OrderedDict(
+        target="table", g=geoid, y=year, tid=survey + year + "." + new_table
+    )
+    return new_data
 
 
-def qttable(data):
-    if data.get("-qr_name", "").startswith("DEC_2000"):
-        raise UnsupportedCensusData("CEDSCI does not yet have 2000 Census data")
-    else:
-        raise NotImplementedError("Could not find any 2010 links to test with")
 
 
 def dataset_transform(program, dataset, ds_table, year=""):
