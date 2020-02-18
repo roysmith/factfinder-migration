@@ -65,6 +65,8 @@ def main(raw_url):
     if not sep:
         raise InputError("Input is not a valid URL")
 
+    # remove query string
+    old_url = old_url.rpartition("?")[0]
     # split into data fields
     domain, tool, target, *data = old_url.split("/")
 
@@ -103,6 +105,14 @@ def table(data):
         y=year,
         tid=survey + year + "." + table_id,
     )
+    codetype, _, raw_codes = raw_data["codes"].partition("~")
+    codes = pipe_to_underscore(raw_codes)
+    if codetype == "naics":
+        new_data["n"] = codes
+    elif codetype == "popgroup":
+        raise NotImplementedError(
+            "CEDSCI needs the whole group name, not just the code"
+        )
     return new_data
 
 
