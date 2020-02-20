@@ -66,7 +66,7 @@ def main(raw_url):
         raise InputError("Input is not a valid URL")
 
     # remove query string
-    old_url = old_url.rpartition("?")[0]
+    old_url = old_url.partition("?")[0]
     # split into data fields
     domain, tool, target, *data = old_url.split("/")
 
