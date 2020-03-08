@@ -6,6 +6,7 @@ import sys
 from urllib.parse import urlencode, urlparse, parse_qs
 from collections import OrderedDict
 import warnings
+import json
 
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
 aff_cf = ("version", "lang", "geo_type", "geo_name", "topic", "object")
@@ -71,6 +72,7 @@ def main(raw_url):
     domain, tool, target, *data = old_url.split("/")
 
     # handle different endpoints differently
+    new_url = ""
     if tool == "bkmk":
         if target == "table":
             new_url = table(data)
@@ -78,6 +80,13 @@ def main(raw_url):
             new_url = cf(data)
         else:
             raise NotImplementedError("No transformation rule for that data type")
+    elif tool == "faces":
+        parsed = urlparse(raw_url)
+        path = parsed.path.split("/")[1:]
+        data = OrderedDict(parse_qs(parsed.query))
+        if path[-1] == "productview.xhtml":
+            if "pid" in data.keys():
+                new_url = productview_pid(data)
     elif tool == "servlet":
         parsed = urlparse(raw_url)
         tool, target = parsed.path.split("/")[1:]
@@ -86,7 +95,8 @@ def main(raw_url):
             new_url = servlet_facts(data)
         else:
             new_url = servlet_table(target, data)
-    else:
+
+    if not new_url:
         raise InputError("Not a stable deep link")
 
     return build_url(new_url)
@@ -105,14 +115,11 @@ def table(data):
         y=year,
         tid=survey + year + "." + table_id,
     )
-    codetype, _, raw_codes = raw_data["codes"].partition("~")
-    codes = pipe_to_underscore(raw_codes)
+    codetype, _, raw_codes = raw_data.get("codes", "").partition("~")
     if codetype == "naics":
-        new_data["n"] = codes
+        new_data["n"] = pipe_to_underscore(raw_codes)
     elif codetype == "popgroup":
-        raise NotImplementedError(
-            "CEDSCI needs the whole group name, not just the code"
-        )
+        new_data["t"] = popgroup_lookup(raw_codes)
     return new_data
 
 
@@ -141,10 +148,10 @@ def servlet_table(servlet, data):
                     data.get("-format", [""])[0].replace("-", ""),
                 )
             )
-        except KeyError:
+        except KeyError as err:
             raise NotImplementedError(
                 "No transformation rule for that servlet or insufficient data"
-            )
+            ) from err
 
     table_data = table_name.split("_")
     program, year, dataset = table_data[0:3]
@@ -190,6 +197,29 @@ def servlet_facts(data):
     return new_data
 
 
+def productview_pid(data):
+    pass
+
+
+def popgroup_lookup(popgroup_list):
+    """Takes a pipe-seperated list of POPGROUP ID numbers
+    and transforms them to a colon-seperated list of full strings
+
+    Requires a topiccodes.json file in the current working directory.
+    One is included in this repo, but a new one can be generated with extractcodes.py
+
+    Raises an exception if the POPGROUP is not found.
+    """
+    with open("topiccodes.json") as f:
+        popgroups = json.load(f)
+
+    popgroup_strs = []
+    for popgroup_id in popgroup_list.split("|"):
+        popgroup_strs.append(popgroups[popgroup_id])
+
+    return ":".join(popgroup_strs)
+
+
 def dataset_transform(program, dataset, ds_table, year=""):
     """Transforms an AFF dataset identifier into the corresponding CEDSCI tid
 
@@ -225,7 +255,10 @@ def dataset_transform(program, dataset, ds_table, year=""):
             year = "20" + dataset[0:2]
 
         if dataset.endswith("YR"):
-            survey = "ACSDT" + dataset[3:5]
+            if ds_table in {"S0201", "S0201PR"}:
+                survey = "ACSSPP" + dataset[3:5]
+            else:
+                survey = "ACSDT" + dataset[3:5]
         else:
             raise UnsupportedCensusData("Dataset does not exist on CEDSCI")
 

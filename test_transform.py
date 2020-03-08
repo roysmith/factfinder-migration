@@ -109,6 +109,13 @@ def test_main():
             "&_sse=on&ActiveGeoDiv=&_useEV=&pctxt=fph&pgsl=160",
             "https://data.census.gov/cedsci/profile?g=1600000US3137000",
         ),
+        (
+            "https://factfinder.census.gov/bkmk/table/1.0/en/"
+            "ACS/16_1YR/S0201//popgroup~048",
+            "https://data.census.gov/cedsci/table?t=048+-+Vietnamese+alone+or+in+any+"
+            "combination+%28450-459%29+%26+%28100-299%29+or+%28300%2C+A01-Z99%29+or+"
+            "%28400-999%29&tid=ACSSPP1Y2016.S0201&y=2016",
+        ),
     ]
     for old, new in urls:
         assert transform.main(old) == new
