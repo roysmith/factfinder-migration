@@ -184,8 +184,11 @@ def servlet_facts(data):
         # Prefix is correct length already, do nothing
         geo_id = raw_geo_id
     elif not raw_geo_id:
-        # Might be able to construct a search query from URL data
-        raise NotImplementedError("URL does not contain a geographic identifier")
+        # Construct a search query from URL data
+        return OrderedDict(
+            target="profile",
+            q=data["_cityTown"][0] + ", " + short_state_id_to_name(data["_state"][0]),
+        )
     else:
         raise InputError("Geographic Idnetifier is malformed")
 
@@ -195,6 +198,13 @@ def servlet_facts(data):
 
     new_data = OrderedDict(target="profile", g=geo_id)
     return new_data
+
+
+def short_state_id_to_name(stateid):
+    with open("transform_data.json") as f:
+        data = json.load(f)["states"]
+
+    return data[stateid.partition("US")[2][-2:]]
 
 
 def productview_pid(data):
@@ -207,11 +217,7 @@ def productview_pid(data):
     dataset = "_".join(pid_data[1:-1])
 
     survey, year, table_id = dataset_transform(program, dataset, ds_table)
-    new_data = OrderedDict(
-        target="table",
-        y=year,
-        tid=survey + year + "." + table_id,
-    )
+    new_data = OrderedDict(target="table", y=year, tid=survey + year + "." + table_id,)
     return new_data
 
 
@@ -219,13 +225,13 @@ def popgroup_lookup(popgroup_list):
     """Takes a pipe-seperated list of POPGROUP ID numbers
     and transforms them to a colon-seperated list of full strings
 
-    Requires a topiccodes.json file in the current working directory.
+    Requires a transform_data.json file in the current working directory.
     One is included in this repo, but a new one can be generated with extractcodes.py
 
     Raises an exception if the POPGROUP is not found.
     """
-    with open("topiccodes.json") as f:
-        popgroups = json.load(f)
+    with open("transform_data.json") as f:
+        popgroups = json.load(f)["topics"]
 
     popgroup_strs = []
     for popgroup_id in popgroup_list.split("|"):

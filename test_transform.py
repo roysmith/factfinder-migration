@@ -153,7 +153,6 @@ def test_main_fail():
             transform.main(url)
 
 
-@pytest.mark.xfail
 def test_main_ni():
     urls = [
         "http://factfinder.census.gov/servlet/ACSSAFFFacts?_event=Search&geo_id="
