@@ -198,7 +198,21 @@ def servlet_facts(data):
 
 
 def productview_pid(data):
-    pass
+    pid = data["pid"]
+    if isinstance(pid, list):
+        pid = pid[0]
+    pid_data = pid.split("_")
+    program = pid_data[0]
+    ds_table = pid_data[-1]
+    dataset = "_".join(pid_data[1:-1])
+
+    survey, year, table_id = dataset_transform(program, dataset, ds_table)
+    new_data = OrderedDict(
+        target="table",
+        y=year,
+        tid=survey + year + "." + table_id,
+    )
+    return new_data
 
 
 def popgroup_lookup(popgroup_list):

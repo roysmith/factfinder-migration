@@ -116,6 +116,11 @@ def test_main():
             "combination+%28450-459%29+%26+%28100-299%29+or+%28300%2C+A01-Z99%29+or+"
             "%28400-999%29&tid=ACSSPP1Y2016.S0201&y=2016",
         ),
+        (
+            "https://factfinder.census.gov/faces/tableservices/jsf/pages/"
+            "productview.xhtml?pid=ACS_17_1YR_B02018&prodType=table",
+            "https://data.census.gov/cedsci/table?tid=ACSDT1Y2017.B02018&y=2017",
+        ),
     ]
     for old, new in urls:
         assert transform.main(old) == new
