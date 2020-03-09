@@ -6,7 +6,9 @@ import sys
 from urllib.parse import urlencode, urlparse, parse_qs
 from collections import OrderedDict
 import warnings
+import traceback
 import json
+import argparse
 
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
 aff_cf = ("version", "lang", "geo_type", "geo_name", "topic", "object")
@@ -345,12 +347,90 @@ def build_url(data):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1 or sys.argv[1] == "-":
-        input_src = sys.stdin
+    parser = argparse.ArgumentParser(
+        description="Transform US Census American Fact Finder URLs "
+        "into data.census.gov URLs",
+        epilog="If a URL is converted without issue, or with a warning, "
+        "%(prog)s exits with code 0. If a URL could not be converted, "
+        "If conversion is not and will not be possible, %(prog)s exits with code 1. "
+        "but conversion might be possible in the future, %(prog)s exits with code 2.",
+        prog="transform.py"
+    )
+    parser.add_argument(
+        "url", default="", nargs="*", help="AFF url(s) to convert"
+    )
+    parser.add_argument(
+        "-i",
+        "--infile",
+        type=argparse.FileType("r"),
+        default=sys.stdin,
+        help="File containing AFF urls to convert, one on each line",
+    )
+    parser.add_argument(
+        "-o",
+        "--outfile",
+        type=argparse.FileType("w"),
+        default=sys.stdout,
+        help="File to output converted URLs to",
+    )
+    parser.add_argument(
+        "-s",
+        "--strict",
+        action="store_true",
+        help="Causes warnings to be interpreted as errors",
+    )
+    parser.add_argument(
+        "--continue-on-err",
+        action="store_true",
+        help="Treats errors as warnings and continues processing. "
+        "URLs that could not be converted will become a blank line.",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Print more information to stderr when things go wrong",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="count",
+        default=0,
+        help="Print less information to stderr when things go wrong",
+    )
+    args = parser.parse_args()
+    verbosity = args.verbose - args.quiet
+    if args.input:
+        input_src = args.url
     else:
-        input_src = sys.argv[1:]
+        input_src = args.infile
+
+    if args.strict:
+        warnings.filterwarnings(action="error")
 
     for line in input_src:
-        if line:
-            res = main(line.strip())
-            print(res)
+        try:
+            result = main(line)
+        except Exception as err:
+            result = ""
+            if verbosity >= 1:
+                traceback.print_exception(
+                    type(err), err, err.__traceback__, file=sys.stderr
+                )
+            elif verbosity >= 0:
+                traceback.print_exception(type(err), err, None, file=sys.stderr)
+
+            if not args.continue_on_err:
+                if type(err) in {
+                    NotImplementedError,
+                    UnsupportedCensusData,
+                    LowConfidenceTransformation,
+                }:
+                    sys.exit(2)
+                else:
+                    sys.exit(1)
+
+        finally:
+            if result or args.outfile is not sys.stdout:
+                print(result, file=args.outfile)
