@@ -59,6 +59,7 @@ class UnsupportedCensusData(Error):
 
 
 class LowConfidenceTransformation(Warning, Error):
+    """Warning raised for URLs where the script must make assumptions"""
     pass
 
 
@@ -203,6 +204,7 @@ def servlet_facts(data):
 
 
 def short_state_id_to_name(stateid):
+    """Converts a state-level GEOID to a state name. Requires transform_data.json"""
     with open("transform_data.json") as f:
         data = json.load(f)["states"]
 
@@ -210,6 +212,7 @@ def short_state_id_to_name(stateid):
 
 
 def productview_pid(data):
+    """Converts a productview.xhtml?pid= url"""
     pid = data["pid"]
     if isinstance(pid, list):
         pid = pid[0]
@@ -265,11 +268,11 @@ def dataset_transform(program, dataset, ds_table, year=""):
         raise NotImplementedError(
             "Table IDs for business patterns are not consistent between AFF and CEDSCI"
         )
-        year = dataset
-        if int(year) < 2012 and survey == "CBP":
-            raise UnsupportedCensusData(
-                "Pre-2012 County Business Patterns not available in CEDSCI"
-            )
+        # year = dataset
+        # if int(year) < 2012 and survey == "CBP":
+        #     raise UnsupportedCensusData(
+        #         "Pre-2012 County Business Patterns not available in CEDSCI"
+        #     )
     # Available or partially-available programs
     elif program == "ACS":
         new_table = ds_table
@@ -401,7 +404,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     verbosity = args.verbose - args.quiet
-    if args.input:
+    if args.url:
         input_src = args.url
     else:
         input_src = args.infile

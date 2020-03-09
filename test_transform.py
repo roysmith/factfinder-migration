@@ -121,6 +121,12 @@ def test_main():
             "productview.xhtml?pid=ACS_17_1YR_B02018&prodType=table",
             "https://data.census.gov/cedsci/table?tid=ACSDT1Y2017.B02018&y=2017",
         ),
+        (
+            "http://factfinder.census.gov/servlet/ACSSAFFFacts?_event=Search&geo_id="
+            "&_geoContext=&_street=&_county=Brevard+county&_cityTown=Brevard+county"
+            "&_state=04000US12&_zip=&_lang=en&_sse=on&pctxt=fph&pgsl=010",
+            "https://data.census.gov/cedsci/profile?q=Brevard+county%2C+Florida",
+        ),
     ]
     for old, new in urls:
         assert transform.main(old) == new
@@ -145,6 +151,24 @@ def test_main_fail():
         (
             "http://factfinder.census.gov/servlet/SAFFFacts?_event=Search"
             "&geo_id=86000US78516",
+            transform.UnsupportedCensusData,
+        ),
+        (
+            "http://factfinder.census.gov/bkmk/navigation/1.0/en/text_search:B07010",
+            NotImplementedError,
+        ),
+        (
+            "http://factfinder.census.gov/servlet/GCTTable?_bm=y&-geo_id=04000US12"
+            "&-_box_head_nbr=GCT-PH1&-ds_name=DEC_2000_SF1_U&-format=ST-7",
+            transform.UnsupportedCensusData,
+        ),
+        (
+            "https://factfinder.census.gov/bkmk/table/1.0/en/PEP/2017/"
+            "PEPANNRES/0100000US.31000",
+            transform.UnsupportedCensusData,
+        ),
+        (
+            "https://factfinder.census.gov/bkmk/table/1.0/en/STC/2015/00A2",
             transform.UnsupportedCensusData,
         ),
     ]
