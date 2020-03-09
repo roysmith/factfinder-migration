@@ -10,6 +10,8 @@ import traceback
 import json
 import argparse
 
+__version__ = "1.0"
+
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
 aff_cf = ("version", "lang", "geo_type", "geo_name", "topic", "object")
 
