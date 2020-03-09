@@ -151,10 +151,10 @@ def servlet_table(servlet, data):
                     data.get("-format", [""])[0].replace("-", ""),
                 )
             )
-        except KeyError as err:
+        except KeyError:
             raise NotImplementedError(
                 "No transformation rule for that servlet or insufficient data"
-            ) from err
+            )
 
     table_data = table_name.split("_")
     program, year, dataset = table_data[0:3]
