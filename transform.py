@@ -9,8 +9,11 @@ import warnings
 import traceback
 import json
 import argparse
+import os
 
-__version__ = "1.1"
+__version__ = "1.2"
+
+transform_data = os.path.join(os.path.dirname(__file__), "transform_data.json")
 
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
 aff_cf = ("version", "lang", "geo_type", "geo_name", "topic", "object")
@@ -207,7 +210,7 @@ def servlet_facts(data):
 
 def short_state_id_to_name(stateid):
     """Converts a state-level GEOID to a state name. Requires transform_data.json"""
-    with open("transform_data.json") as f:
+    with open(transform_data) as f:
         data = json.load(f)["states"]
 
     return data[stateid.partition("US")[2][-2:]]
@@ -237,7 +240,7 @@ def popgroup_lookup(popgroup_list):
 
     Raises an exception if the POPGROUP is not found.
     """
-    with open("transform_data.json") as f:
+    with open(transform_data) as f:
         popgroups = json.load(f)["topics"]
 
     popgroup_strs = []
