@@ -10,7 +10,7 @@ import traceback
 import json
 import argparse
 
-__version__ = "1.0"
+__version__ = "1.1"
 
 aff_table = ("version", "lang", "program", "dataset", "product", "geoids", "codes")
 aff_cf = ("version", "lang", "geo_type", "geo_name", "topic", "object")
@@ -416,7 +416,7 @@ if __name__ == "__main__":
 
     for line in input_src:
         try:
-            result = main(line)
+            result = main(line.strip())
         except Exception as err:
             result = ""
             if verbosity >= 1:
